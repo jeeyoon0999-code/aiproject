@@ -1,13 +1,12 @@
 import streamlit as st
 import folium
-from folium import IFrame
 from streamlit.components.v1 import html
 
 # --- 페이지 설정 ---
 st.set_page_config(page_title="서울 관광지도", page_icon="🗺️", layout="wide")
 
 st.title("🗺️ 외국인이 사랑하는 서울 관광지 TOP 10")
-st.write("서울을 방문한 외국인들이 가장 많이 찾는 명소들을 지도 위에서 살펴보고, 각각의 매력을 알아봐요! 😄")
+st.write("지도를 클릭해서 서울의 인기 관광지 정보를 확인해보세요! 😄")
 
 # --- 관광지 데이터 ---
 places = [
@@ -95,39 +94,41 @@ places = [
 
 # --- 지도 생성 ---
 m = folium.Map(location=[37.5665, 126.9780], zoom_start=12, tiles="CartoDB positron")
-
-# 마커 색상 다양하게
 colors = ["red", "blue", "green", "purple", "orange", "darkred", "cadetblue", "darkgreen", "lightgray", "pink"]
 
-# --- 마커 표시 ---
+# --- 지도에 마커 표시 ---
 for i, p in enumerate(places):
-    iframe = IFrame(f"""
-        <h4>{p['name']}</h4>
-        <p>{p['desc']}</p>
-        <p><b>✨ 인기 이유:</b> {p['reason']}</p>
-        <p><b>🚇 가까운 역:</b> {p['station']}</p>
-    """, width=260, height=160)
-    popup = folium.Popup(iframe, max_width=250)
+    popup_html = f"""
+    <b>{p['name']}</b><br>
+    <small>클릭 후 아래에서 상세정보를 확인하세요 👇</small>
+    """
     folium.Marker(
         location=[p["lat"], p["lon"]],
-        popup=popup,
+        popup=popup_html,
         tooltip=p["name"],
-        icon=folium.Icon(color=colors[i % len(colors)], icon="star", prefix="fa")
+        icon=folium.Icon(color=colors[i % len(colors)], icon="star")
     ).add_to(m)
 
-# 지도 표시
+# --- 지도 표시 ---
 html(m._repr_html_(), height=600)
 
-# --- 관광지 설명 섹션 ---
 st.markdown("---")
-st.subheader("📖 관광지 상세 설명")
+st.subheader("📍 관광지 상세 정보")
 
-for i, p in enumerate(places, 1):
-    st.markdown(f"### {i}. {p['name']}")
-    st.write(f"**📝 설명:** {p['desc']}")
-    st.write(f"**✨ 인기 이유:** {p['reason']}")
-    st.write(f"**🚇 가까운 지하철역:** {p['station']}")
-    st.markdown("---")
+# --- 관광지 선택 드롭다운 ---
+selected_name = st.selectbox(
+    "보고 싶은 관광지를 선택하세요 👇",
+    ["선택 안 함"] + [p["name"] for p in places]
+)
+
+# --- 선택된 관광지 설명 표시 ---
+if selected_name != "선택 안 함":
+    place = next(p for p in places if p["name"] == selected_name)
+    st.markdown(f"### {place['name']}")
+    st.write(f"**📝 설명:** {place['desc']}")
+    st.write(f"**✨ 인기 이유:** {place['reason']}")
+    st.write(f"**🚇 가까운 지하철역:** {place['station']}")
+else:
+    st.info("지도에서 관광지를 클릭하거나 위 드롭다운에서 선택해보세요 😄")
 
 st.caption("📍 데이터 출처: Visit Seoul, TripAdvisor, Google Travel (2024년 기준)")
-
